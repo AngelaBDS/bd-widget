@@ -1,6 +1,6 @@
 const CACHE_NAME = 'bd-career-matrix-cache-v1';
 const urlsToCache = [
-  'bd_career_matrix_mobile.html',
+  'index.html',
   'manifest.json',
   'bd_app_icon.png'
 ];

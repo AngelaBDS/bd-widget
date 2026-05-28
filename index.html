@@ -1,0 +1,1635 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>BD 職涯升級助手 | Mobile Widget</title>
+  
+  <!-- PWA 元資料與捷徑設定 -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#090d16">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="BD 職涯小工具">
+  <link rel="apple-touch-icon" href="bd_app_icon.png">
+
+  <!-- Google Fonts: Outfit (標題與數字) and Inter (內文) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    /* ==========================================
+       1. 全域變數與原生 App 質感樣式
+       ========================================== */
+    :root {
+      --bg-color: #090d16;
+      --bg-gradient: radial-gradient(circle at 50% 0%, #151f38 0%, #090d16 100%);
+      --card-bg: rgba(15, 23, 42, 0.7);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --primary-color: #10b981;
+      --primary-rgb: 16, 185, 129;
+      --transition-speed: 0.3s;
+      --radius-sm: 10px;
+      --radius-md: 16px;
+      --radius-lg: 24px;
+      --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.25);
+      --shadow-lg: 0 16px 32px rgba(0, 0, 0, 0.45);
+      
+      --font-display: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background-color: var(--bg-color);
+      background-image: var(--bg-gradient);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      line-height: 1.5;
+      /* 頂部劉海與底部安全區域留白 (iOS) */
+      padding-top: env(safe-area-inset-top, 24px);
+      padding-bottom: calc(75px + env(safe-area-inset-bottom, 16px));
+    }
+
+    /* 背景虛化動態光暈 */
+    .glow-blur {
+      position: absolute;
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, rgba(var(--primary-rgb), 0.15) 0%, rgba(var(--primary-rgb), 0) 70%);
+      top: -50px;
+      left: 50%;
+      transform: translateX(-50%);
+      pointer-events: none;
+      z-index: 0;
+      filter: blur(30px);
+      transition: background var(--transition-speed);
+    }
+
+    .app-container {
+      width: 100%;
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 0 16px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ==========================================
+       2. Header 區 (迷你且具原生感)
+       ========================================== */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      margin-bottom: 16px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand img {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-sm);
+      border: 1.5px solid rgba(255, 255, 255, 0.1);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .brand-text h1 {
+      font-family: var(--font-display);
+      font-size: 1.15rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #ffffff 40%, rgba(var(--primary-rgb), 0.8) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-text p {
+      font-size: 0.7rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+      letter-spacing: 0.05em;
+    }
+
+    .widget-badge {
+      font-size: 0.65rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.2) 0%, rgba(var(--primary-rgb), 0.05) 100%);
+      border: 1px solid rgba(var(--primary-rgb), 0.3);
+      color: var(--primary-color);
+      padding: 4px 10px;
+      border-radius: 100px;
+      font-family: var(--font-display);
+      text-transform: uppercase;
+      box-shadow: 0 0 10px rgba(var(--primary-rgb), 0.1);
+    }
+
+    /* ==========================================
+       3. 頂部安裝桌面捷徑引導 (PWA Shortcut Guide)
+       ========================================== */
+    .shortcut-banner {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(6, 182, 212, 0.05) 100%);
+      border: 1px dashed rgba(16, 185, 129, 0.4);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: relative;
+    }
+
+    .shortcut-banner-close {
+      position: absolute;
+      top: 6px;
+      right: 8px;
+      color: var(--text-muted);
+      font-size: 1.1rem;
+      cursor: pointer;
+    }
+
+    .shortcut-icon {
+      width: 32px;
+      height: 32px;
+      background: rgba(16, 185, 129, 0.2);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--primary-color);
+      flex-shrink: 0;
+    }
+
+    .shortcut-icon svg {
+      width: 18px;
+      height: 18px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2.5;
+    }
+
+    .shortcut-text h3 {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 2px;
+    }
+
+    .shortcut-text p {
+      font-size: 0.72rem;
+      color: var(--text-secondary);
+      line-height: 1.3;
+    }
+
+    /* ==========================================
+       4. 階段分段控制器 (Stage Segmented Control)
+       ========================================== */
+    .stage-segmented {
+      display: flex;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 3px;
+      margin-bottom: 16px;
+    }
+
+    .stage-seg-btn {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 10px 0;
+      border-radius: 9px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .stage-seg-btn small {
+      font-size: 0.65rem;
+      opacity: 0.7;
+    }
+
+    .stage-seg-btn.active {
+      background: var(--primary-color);
+      color: #ffffff;
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* ==========================================
+       5. 視角分頁切換卡片區 (Tab Views)
+       ========================================== */
+    .app-view {
+      display: none;
+      animation: tabFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes tabFadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .glass-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 16px;
+    }
+
+    /* 5.1 探索分頁 (Explore View) */
+    .role-badge-pill {
+      display: inline-block;
+      font-family: var(--font-display);
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #ffffff;
+      background: var(--primary-color);
+      padding: 3px 10px;
+      border-radius: 100px;
+      margin-bottom: 8px;
+    }
+
+    .explore-title {
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .explore-sub {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+      margin-bottom: 16px;
+    }
+
+    .section-header {
+      font-family: var(--font-display);
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--primary-color);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .section-header svg {
+      width: 14px;
+      height: 14px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2.5;
+    }
+
+    .kpi-pills {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+
+    .kpi-pill-item {
+      background: rgba(var(--primary-rgb), 0.05);
+      border-left: 3px solid var(--primary-color);
+      padding: 8px 12px;
+      border-radius: 0 8px 8px 0;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+
+    .mobile-scope-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .scope-box {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      gap: 10px;
+    }
+
+    .scope-icon-wrap {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: rgba(var(--primary-rgb), 0.1);
+      color: var(--primary-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .scope-icon-wrap svg {
+      width: 16px;
+      height: 16px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2.5;
+    }
+
+    .scope-body h4 {
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .scope-body p {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }
+
+    .pill-cloud {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .tag-pill {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--card-border);
+      padding: 5px 12px;
+      border-radius: 100px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .tag-pill::before {
+      content: '';
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--primary-color);
+    }
+
+    /* 5.2 智能比較分頁 (Mobile Accordion Matrix) */
+    .mobile-matrix-intro {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+      border-left: 2px solid var(--primary-color);
+      padding-left: 8px;
+    }
+
+    .accordion-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .accordion-item {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: all 0.3s;
+    }
+
+    .accordion-header {
+      padding: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: var(--text-primary);
+    }
+
+    .accordion-header svg {
+      width: 16px;
+      height: 16px;
+      fill: none;
+      stroke: var(--text-muted);
+      stroke-width: 2.5;
+      transition: transform 0.25s;
+    }
+
+    .accordion-item.active {
+      border-color: rgba(99, 102, 241, 0.3);
+      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.05);
+    }
+
+    .accordion-item.active .accordion-header svg {
+      transform: rotate(180deg);
+      stroke: #6366f1;
+    }
+
+    .accordion-body {
+      display: none;
+      padding: 0 14px 14px 14px;
+      border-top: 1px solid rgba(255, 255, 255, 0.03);
+      animation: slideDown 0.25s ease-out forwards;
+    }
+
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .matrix-row-card {
+      margin-top: 10px;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.01);
+      border-radius: 8px;
+    }
+
+    .matrix-row-stage {
+      font-size: 0.72rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      color: #fff;
+    }
+
+    .matrix-row-content {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .matrix-row-content ul {
+      list-style-type: none;
+      padding-left: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .matrix-row-content ul li {
+      position: relative;
+      padding-left: 10px;
+    }
+
+    .matrix-row-content ul li::before {
+      content: '•';
+      position: absolute;
+      left: 0;
+      color: var(--stage-color);
+      font-weight: bold;
+    }
+
+    /* 5.3 自評分頁 (Assess View) */
+    .checklist-instructions {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+      border-left: 2px solid var(--primary-color);
+      padding-left: 8px;
+    }
+
+    .checklist-group-title {
+      font-family: var(--font-display);
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin: 12px 0 8px 0;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .checklist-group-title small {
+      color: var(--text-muted);
+    }
+
+    .mobile-check-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .check-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px solid var(--card-border);
+      padding: 10px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .check-item.checked {
+      background: rgba(6, 182, 212, 0.05);
+      border-color: rgba(6, 182, 212, 0.3);
+    }
+
+    .checkbox-btn {
+      width: 18px;
+      height: 18px;
+      border-radius: 4px;
+      border: 2px solid var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+      transition: all 0.15s;
+    }
+
+    .check-item.checked .checkbox-btn {
+      background: #06b6d4;
+      border-color: #06b6d4;
+    }
+
+    .checkbox-btn svg {
+      width: 12px;
+      height: 12px;
+      fill: none;
+      stroke: #ffffff;
+      stroke-width: 3.5;
+      display: none;
+    }
+
+    .check-item.checked .checkbox-btn svg {
+      display: block;
+    }
+
+    .check-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .check-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .check-desc {
+      font-size: 0.7rem;
+      color: var(--text-secondary);
+      margin-top: 1px;
+      line-height: 1.3;
+    }
+
+    /* 報告結果區 */
+    .assess-report-header {
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .assess-report-header svg {
+      width: 18px;
+      height: 18px;
+      fill: none;
+      stroke: #06b6d4;
+      stroke-width: 2.5;
+    }
+
+    .mobile-progress-row {
+      margin-bottom: 10px;
+    }
+
+    .progress-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+      font-size: 0.75rem;
+    }
+
+    .progress-outer {
+      width: 100%;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .progress-inner {
+      height: 100%;
+      border-radius: 10px;
+      width: 0%;
+      transition: width 0.5s ease-out;
+    }
+
+    .advice-box {
+      background: rgba(6, 182, 212, 0.03);
+      border-left: 4px solid #06b6d4;
+      padding: 12px;
+      border-radius: 0 10px 10px 0;
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    /* ==========================================
+       6. 貼心手機底欄導航 (Bottom Navigation Tab Bar)
+       ========================================== */
+    .bottom-tab-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: calc(56px + env(safe-area-inset-bottom, 16px));
+      background: rgba(9, 13, 22, 0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding: 0 24px;
+      padding-bottom: env(safe-area-inset-bottom, 16px);
+      z-index: 100;
+      box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .tab-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      color: var(--text-muted);
+      text-decoration: none;
+      cursor: pointer;
+      flex: 1;
+      height: 100%;
+      transition: color 0.2s;
+    }
+
+    .tab-item svg {
+      width: 20px;
+      height: 20px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2.2;
+      transition: transform 0.2s;
+    }
+
+    .tab-item span {
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+
+    .tab-item.active {
+      color: var(--primary-color);
+    }
+
+    .tab-item.active svg {
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 發光球飾 -->
+  <div class="glow-blur" id="bgGlow"></div>
+
+  <div class="app-container">
+    
+    <!-- 頂部 Header -->
+    <header>
+      <div class="brand">
+        <img src="bd_app_icon.png" alt="BD Career Matrix Logo">
+        <div class="brand-text">
+          <h1>BD 職涯小工具</h1>
+          <p>BD Career Matrix</p>
+        </div>
+      </div>
+      <span class="widget-badge" id="appBadge">EXPLORE</span>
+    </header>
+
+    <!-- 桌面捷徑引導區 (PWA Install Helper) -->
+    <div class="shortcut-banner" id="shortcutBanner">
+      <div class="shortcut-banner-close" onclick="dismissBanner()">&times;</div>
+      <div class="shortcut-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 2v20M5 15l7 7 7-7"/></svg>
+      </div>
+      <div class="shortcut-text">
+        <h3 id="installTitle">加到主畫面以開啟「小工具」</h3>
+        <p id="installDesc">在 Safari / Chrome 點選分享按鈕，選擇「加入主畫面」，即可隨時在桌面一鍵測評！</p>
+      </div>
+    </div>
+
+    <!-- 探索分頁專用：階級控制器 -->
+    <div class="stage-segmented" id="stageControls">
+      <button class="stage-seg-btn active" id="seg-0" onclick="goToStage(0)">
+        <span>初階 BD</span>
+        <small>獵人期</small>
+      </button>
+      <button class="stage-seg-btn" id="seg-1" onclick="goToStage(1)">
+        <span>中階 BD</span>
+        <small>建構期</small>
+      </button>
+      <button class="stage-seg-btn" id="seg-2" onclick="goToStage(2)">
+        <span>高階 BD</span>
+        <small>架構期</small>
+      </button>
+    </div>
+
+    <!-- ==========================================
+       分頁 A: 階段探索 (Explore Tab)
+       ========================================== -->
+    <div class="app-view" id="exploreView" style="display: block;">
+      <div class="glass-card">
+        <div class="role-badge-pill" id="stageBadge">Executor</div>
+        <h2 class="explore-title" id="stageTitle">初階 BD</h2>
+        <div class="explore-sub" id="stageYr">0-3 年 / 獵人期</div>
+        
+        <div class="section-header">
+          <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+          核心 KPI 指標
+        </div>
+        <div class="kpi-pills" id="stageKPI">
+          <!-- 動態渲染 -->
+        </div>
+      </div>
+
+      <div class="glass-card">
+        <div class="section-header">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
+          工作範疇 (Scope of Work)
+        </div>
+        <div class="mobile-scope-list" id="stageScope">
+          <!-- 動態渲染 -->
+        </div>
+      </div>
+
+      <div class="glass-card">
+        <div class="section-header">
+          <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+          必備實戰技能
+        </div>
+        <div class="pill-cloud" id="stageSkills">
+          <!-- 動態渲染 -->
+        </div>
+      </div>
+
+      <div class="glass-card">
+        <div class="section-header" style="color: #ef4444;">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+          本階段核心挑戰
+        </div>
+        <p style="font-size: 0.78rem; line-height: 1.6; color: var(--text-secondary);" id="stageChallenge">
+          <!-- 動態渲染 -->
+        </p>
+      </div>
+    </div>
+
+    <!-- ==========================================
+       分頁 B: 智能比較 (Compare Accordion View)
+       ========================================== -->
+    <div class="app-view" id="compareView">
+      <div class="glass-card">
+        <div class="section-header">
+          <svg viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+          全景比較維度
+        </div>
+        <p class="mobile-matrix-intro">手機端以「折疊面板」優化閱讀，點點點即刻橫向對齊三個階層的核心差異！</p>
+        
+        <div class="accordion-group">
+          <!-- 面板 1 -->
+          <div class="accordion-item active" onclick="toggleAccordion(this)">
+            <div class="accordion-header">
+              <span>1. 階段定位與角色型態</span>
+              <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </div>
+            <div class="accordion-body" style="display: block;">
+              <div class="matrix-row-card">
+                <span class="matrix-row-stage" style="background: #10b981;">初階 BD</span>
+                <div class="matrix-row-content"><b>Executor / 獵人期</b><br>在無品牌背書下，以一己之力單兵突破，陌生開發並敲開客群大門。</div>
+              </div>
+              <div class="matrix-row-card">
+                <span class="matrix-row-stage" style="background: #f59e0b;">中階 BD</span>
+                <div class="matrix-row-content"><b>Strategist / 建構期</b><br>從個人英雄轉型為管轄市場負責人，承擔 P&L 責任並搭建自主運行的代理渠道網絡。</div>
+              </div>
+              <div class="matrix-row-card">
+                <span class="matrix-row-stage" style="background: #6366f1;">高階 BD</span>
+                <div class="matrix-row-content"><b>Architect / 架構期</b><br>跨越至商業架構思維，站在董事會與創辦人視角，利用業務與資本雙引擎放大公司估值。</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 面板 2 -->
+          <div class="accordion-item" onclick="toggleAccordion(this)">
+            <div class="accordion-header">
+              <span>2. 核心工作範疇對比</span>
+              <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </div>
+            <div class="accordion-body">
+              <div class="matrix-row-card">
+                <span class="matrix-row-stage" style="background: #10b981; --stage-color: #10b981;">初階 BD</span>
+                <div class="matrix-row-content">
+                  <ul>
+                    <li>陌生冷開發與 LinkedIn 陌生信件邀約</li>
+                    <li>使用 CRM 追蹤轉換並維護 Pipeline 儲備</li>
+                    <li>產品規格 Demo 簡報與展會現場拜訪</li>
+                    <li>方案報價試算與招標行政流程跟進</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="matrix-row-card">
+                <span class="matrix-row-stage" style="background: #f59e0b; --stage-color: #f59e0b;">中階 BD</span>
+                <div class="matrix-row-content">
+                  <ul>
+                    <li>代理商與渠道選商、産品培訓與績效審查</li>
+                    <li>目標市場進入策略 (GTM) 與競品定價規劃</li>
+                    <li>草擬關鍵商業協議 (MOU/LOI) 與合約談判</li>
+                    <li>深耕技術或產學 KOL 關係建立策略示範</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="matrix-row-card">
+                <span class="matrix-row-stage" style="background: #6366f1; --stage-color: #6366f1;">高階 BD</span>
+                <div class="matrix-row-content">
+                  <ul>
+                    <li>篩選國際購併目標、盡職調查與投後整合</li>
+                    <li>從零搭建新事業體 (BU)、規劃商業模式</li>
+                    <li>串聯多方利益巨頭架構防禦性生態系統</li>
+                    <li>董事會溝通、資本擴張溢價與估值管理</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 面板 3 -->
+          <div class="accordion-item" onclick="toggleAccordion(this)">
+            <div class="accordion-header">
+              <span>3. 核心能力技能配比</span>
+              <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </div>
+            <div class="accordion-body">
+              <div class="matrix-row-card">
+                <span class="matrix-row-stage" style="background: #10b981; --stage-color: #10b981;">初階 BD</span>
+                <div class="matrix-row-content">
+                  <ul>
+                    <li>抗拒絕大師：心智防禦與高恢復力</li>
+                    <li>產品核心知識與特色精確傳達能力</li>
+                    <li>邏輯書面提案表達能力</li>
+                    <li>LinkedIn 精準定位開發與 CRM 熟練管理</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="matrix-row-card">
+                <span class="matrix-row-stage" style="background: #f59e0b; --stage-color: #f59e0b;">中階 BD</span>
+                <div class="matrix-row-content">
+                  <ul>
+                    <li>進階商業談判與合約談判斡旋技巧</li>
+                    <li>跨文化敏銳度與多國市場洞察</li>
+                    <li>P&L 損益表基本功與小型團隊領導</li>
+                    <li>經銷體系管理設計與考核規劃能力</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="matrix-row-card">
+                <span class="matrix-row-stage" style="background: #6366f1; --stage-color: #6366f1;">高階 BD</span>
+                <div class="matrix-row-content">
+                  <ul>
+                    <li>財務全責 P&L 經營管理與跨國組織管理</li>
+                    <li>資本運作與企業估值溢價提升策略</li>
+                    <li>頂層多贏商業模式設計與生態架構思維</li>
+                    <li>高難度董事會說服力與投融資 DD 評估</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 面板 4 -->
+          <div class="accordion-item" onclick="toggleAccordion(this)">
+            <div class="accordion-header">
+              <span>4. 最大能力瓶頸與挑戰</span>
+              <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </div>
+            <div class="accordion-body">
+              <div class="matrix-row-card">
+                <span class="matrix-row-stage" style="background: #10b981;">初階 BD</span>
+                <div class="matrix-row-content"><b>孤獨感與開發受阻</b><br>面臨大品牌缺乏時的極強拒絕，極端考验自律性與持續開發Pipeline的耐力。</div>
+              </div>
+              <div class="matrix-row-card">
+                <span class="matrix-row-stage" style="background: #f59e0b;">中階 BD</span>
+                <div class="matrix-row-content"><b>擺脫個人英雄單打</b><br>必須承擔P&L毛利成敗，管理經銷商，引導跨部門配合以構建可持續拓荒的管道網。</div>
+              </div>
+              <div class="matrix-row-card">
+                <span class="matrix-row-stage" style="background: #6366f1;">高階 BD</span>
+                <div class="matrix-row-content"><b>心智格局維度跨越</b><br>跳出純業務思維，站在資本跟全局商業閉環角度去說服董事會並擴張公司生態護城河。</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==========================================
+       分頁 C: 職涯測評 (Assess View)
+       ========================================== -->
+    <div class="app-view" id="assessView">
+      <div class="glass-card">
+        <h2 class="assess-report-header">
+          <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+          勾選您目前擁有的實戰技能
+        </h2>
+        <p class="checklist-instructions">請以一線實戰為考量。勾選後，系統將實時為您輸出高度個性化的瓶頸診斷與策略！</p>
+        
+        <!-- 分組 1 -->
+        <div class="checklist-group-title">
+          <span>初階技能 (Junior Layer)</span>
+          <small id="count-group1">0 / 6</small>
+        </div>
+        <div class="mobile-check-list" id="checklist-group1"></div>
+
+        <!-- 分組 2 -->
+        <div class="checklist-group-title">
+          <span>中階技能 (Mid Layer)</span>
+          <small id="count-group2">0 / 6</small>
+        </div>
+        <div class="mobile-check-list" id="checklist-group2"></div>
+
+        <!-- 分組 3 -->
+        <div class="checklist-group-title">
+          <span>高階技能 (Senior Layer)</span>
+          <small id="count-group3">0 / 6</small>
+        </div>
+        <div class="mobile-check-list" id="checklist-group3"></div>
+      </div>
+
+      <!-- 測評診斷即時反饋區 -->
+      <div class="glass-card" style="border-color: rgba(6, 182, 212, 0.2);">
+        <h2 class="assess-report-header">
+          <svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></svg>
+          動態契合度匹配報告
+        </h2>
+
+        <!-- 進度排版 -->
+        <div class="mobile-progress-row">
+          <div class="progress-meta">
+            <span style="color: #10b981; font-weight: 600;">初階 (Executor)</span>
+            <span id="score-junior" style="font-weight: 700;">0%</span>
+          </div>
+          <div class="progress-outer">
+            <div class="progress-inner" id="bar-junior" style="background: #10b981;"></div>
+          </div>
+        </div>
+
+        <div class="mobile-progress-row">
+          <div class="progress-meta">
+            <span style="color: #f59e0b; font-weight: 600;">中階 (Strategist)</span>
+            <span id="score-mid" style="font-weight: 700;">0%</span>
+          </div>
+          <div class="progress-outer">
+            <div class="progress-inner" id="bar-mid" style="background: #f59e0b;"></div>
+          </div>
+        </div>
+
+        <div class="mobile-progress-row">
+          <div class="progress-meta">
+            <span style="color: #6366f1; font-weight: 600;">高階 (Architect)</span>
+            <span id="score-senior" style="font-weight: 700;">0%</span>
+          </div>
+          <div class="progress-outer">
+            <div class="progress-inner" id="bar-senior" style="background: #6366f1;"></div>
+          </div>
+        </div>
+
+        <div style="width:100%; height:1px; background:rgba(255,255,255,0.06); margin:14px 0;"></div>
+
+        <!-- 瓶頸策略回饋 -->
+        <div class="advice-box" id="adviceText">
+          請在上方的技能清單中勾選您已掌握的能力，系統將立即輸出專屬的診斷報表與升級策略。
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ==========================================
+     手機底欄導航 Tab Bar
+     ========================================== -->
+  <nav class="bottom-tab-bar">
+    <a class="tab-item active" id="tab-explore" onclick="switchTab('explore')">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>
+      <span>階段探索</span>
+    </a>
+    <a class="tab-item" id="tab-compare" onclick="switchTab('compare')">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>
+      <span>全景對照</span>
+    </a>
+    <a class="tab-item" id="tab-assess" onclick="switchTab('assess')">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+      <span>自評小工具</span>
+    </a>
+  </nav>
+
+  <script>
+    // 職涯階段資料
+    const matrixData = [
+      {
+        title: '初階 BD',
+        subtitle: '獵人期',
+        years: '0–3 年',
+        roleArchetype: 'Executor',
+        color: '#10b981',
+        rgb: '16, 185, 129',
+        kpis: [
+          'Lead 開發與獲取數量',
+          'Demo 成功率與簡報回饋',
+          'Sales Pipeline 機會儲備總量'
+        ],
+        scopes: [
+          {
+            title: '陌生開發 (Outreach)',
+            desc: 'Cold Outreach（Email開發信）、LinkedIn精準開發與拜訪邀約。',
+            icon: `<svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>`
+          },
+          {
+            title: 'Pipeline 建立與維護',
+            desc: '使用 CRM 管理客群、追蹤銷售漏斗轉換率與狀態。',
+            icon: `<svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>`
+          },
+          {
+            title: '產品 Demo 與展示',
+            desc: '於展會現場、拜訪終端客戶或線上會議進行簡報與產品演示。',
+            icon: `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`
+          },
+          {
+            title: '合作提案撰寫與報價',
+            desc: '根據痛點編製客製化方案、報價試算與招投標行政流程跟進。',
+            icon: `<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>`
+          }
+        ],
+        skills: ['抗拒絕大師', '產品核心知識', '邏輯書面表達', '高效時間管理', 'LinkedIn 精準定位', 'CRM 流程掌握'],
+        challenge: '在缺乏公司強大品牌背書的情況下，必須以一己之力敲開陌生客戶的大門。初期的「被拒絕感」極強，面臨高度的心智孤獨與考驗執行續航力，如何在有限資源下敲定第一個 Demo 是主要挑戰。'
+      },
+      {
+        title: '中階 BD',
+        subtitle: '建構期',
+        years: '3–7 年',
+        roleArchetype: 'Strategist',
+        color: '#f59e0b',
+        rgb: '245, 158, 11',
+        kpis: [
+          '新市場/新渠道開拓數量與速度',
+          '經銷商及合作夥伴品質 (Active Rate)',
+          '管轄市場營收成長與毛利規模'
+        ],
+        scopes: [
+          {
+            title: '經銷商與渠道商管理',
+            desc: '進行合作夥伴選商、產品賦能培訓、市場防禦機制設計及年度績效覆盤。',
+            icon: `<svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>`
+          },
+          {
+            title: 'GTM 新市場進入策略',
+            desc: '規劃進入規劃、對目標區域進行精確競品分析、通路定價戰術與定位策略。',
+            icon: `<svg viewBox="0 0 24 24"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"></polygon></svg>`
+          },
+          {
+            title: '跨國/跨文化商務談判',
+            desc: '草擬關鍵商業條款 (MOU / LOI)、合約法律風險管理、消弭文化隔閡。',
+            icon: `<svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle></svg>`
+          },
+          {
+            title: 'KOL / 關鍵決策者深耕',
+            desc: '建立並維護產學研KOL，推動聯合學術、臨床或策略示範點。',
+            icon: `<svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>`
+          }
+        ],
+        skills: ['進階商務談判', '跨文化敏銳度', '區域市場洞察', '商業策略規劃', 'P&L 損益表基本功', '小型專案團隊領導'],
+        challenge: '成功從「個人英雄主義」跨越到「市場管理者」。不能再只依賴自己拿單，而必須承擔 P&L 責任，架構出能夠自主運作的經銷網絡，並在極度不確定且充滿跨國摩擦的環境下，引導跨部門前進。'
+      },
+      {
+        title: '高階 BD',
+        subtitle: '架構期',
+        years: '7 年以上',
+        roleArchetype: 'Architect',
+        color: '#6366f1',
+        rgb: '99, 102, 241',
+        kpis: [
+          '策略對公司估值提升幅度',
+          '跨國生態系統整合深度與版圖完整度',
+          '大型策略性購併 (M&A) 與合資案成交量'
+        ],
+        scopes: [
+          {
+            title: 'M&A 與策略性投資評估',
+            desc: '篩選國際購併目標、發動盡職調查 (DD)、進行公司估值與投後戰略整合。',
+            icon: `<svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>`
+          },
+          {
+            title: '新事業體 (BU) 從零搭建',
+            desc: '跨界設計全新的商業模式 (Business Model)、事業預算，組建核心團隊。',
+            icon: `<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>`
+          },
+          {
+            title: '產業生態系統跨界整合',
+            desc: '統籌跨領域巨頭企業，建立高黏著度利益共享的產業生態網絡。',
+            icon: `<svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>`
+          },
+          {
+            title: '公司資本擴張與估值策略',
+            desc: '直接參與董事會決策，打通投資人關係，將成果轉化為資本估值溢價。',
+            icon: `<svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>`
+          }
+        ],
+        skills: ['P&L 損益全權管理', '資本市場運作思維', '全球化組織領導力', '頂層商業模式設計', '董事會溝通與說服力', '投資估值與評估邏輯'],
+        challenge: '面臨徹底的「維度跨越」——從策略戰術轉向「商業架構思維」。你不再被要求賣出多少產品或開拓幾個代理商，而是必須站在創辦人與董事會視角，用業務與資本兩大引擎放大公司的資本估值。'
+      }
+    ];
+
+    // 自評清單
+    const simulatorSkills = {
+      junior: [
+        { id: 'j1', label: '陌生客戶開發 (Cold Outreach)', desc: '能獨立撰寫高回信率的陌生信並設計跟進策略' },
+        { id: 'j2', label: 'LinkedIn 精準漏斗行銷', desc: '熟練運用 LinkedIn 定位關鍵決策人並建立互動聯繫' },
+        { id: 'j3', label: 'CRM 漏斗與 Pipeline 管理', desc: '懂得使用 CRM 追蹤每一個銷售機會並維護健康 Pipeline' },
+        { id: 'j4', label: '流暢的產品 Demo 簡報', desc: '能向客戶精準講述產品規格與核心價值主張，解答痛點' },
+        { id: 'j5', label: '高壓抗拒心理素質', desc: '能每天被拒絕仍保持高亢的拜訪頻率，擁有極佳的恢復力' },
+        { id: 'j6', label: '商務方案編製與報價', desc: '能編寫建議書，並進行標準報價試算與跟進招投標行政流程' }
+      ],
+      mid: [
+        { id: 'm1', label: '渠道與經銷商評估與管理', desc: '熟練評估代理商實力，並制定其考核、培訓與定價機制' },
+        { id: 'm2', label: 'GTM 市場進入策略規劃', desc: '能對新市場做完整的競品與定價分析，並制定具體的進入節奏' },
+        { id: 'm3', label: '複雜商務合約談判 (LOI/MOU)', desc: '懂得在保障公司利益的同時，設計讓雙方達成共識的談判框架' },
+        { id: 'm4', label: 'KOL / 技術核心人物深耕', desc: '能與產業界的意見領袖建立深度學術、技術合作或臨床示範' },
+        { id: 'm5', label: '跨文化商務摩擦處理力', desc: '在跨國商務合作中能敏銳化解文化衝突，並維持合作穩定' },
+        { id: 'm6', label: 'P&L 損益平衡基本概念', desc: '理解管轄地區的獲利狀況，而非只看營收，懂得算通路毛利' }
+      ],
+      senior: [
+        { id: 's1', label: 'M&A 購併案與投資評估', desc: '能從戰略視角主導國際購併目標評估與盡職調查 (DD) 流程' },
+        { id: 's2', label: '從 0 到 1 新事業體 (BU) 組建', desc: '具備全新商業模式設計力，能從無到有組建多功能跨國團隊' },
+        { id: 's3', label: '跨產業多方利益生態系架構', desc: '能組織巨頭企業形成穩固的生態聯盟，設計高防禦性的商業閉環' },
+        { id: 's4', label: '董事會溝通與投融資說服力', desc: '能站在股東與資本市場高度，向董事會清楚闡述業務價值與估值潛力' },
+        { id: 's5', label: '資本運作與企業估值策略', desc: '懂得配合股權融資、合資或資本運作放大業務的帳面估值溢價' },
+        { id: 's6', label: '全責 P&L 與跨國組織管理', desc: '背負整間公司或大區域的損益成敗，管理大型、多元文化的組織結構' }
+      ]
+    };
+
+    let checkedSkills = new Set();
+    let currentStageIndex = 0;
+
+    // ==========================================
+    // A. 頂部安裝引導 Banner 動態感應與關閉
+    // ==========================================
+    (function detectMobileSystem() {
+      const banner = document.getElementById('shortcutBanner');
+      const installTitle = document.getElementById('installTitle');
+      const installDesc = document.getElementById('installDesc');
+      const isiOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+
+      // 如果已經在 PWA 獨立運行模式，隱藏引導 Banner
+      if (isStandalone) {
+        banner.style.display = 'none';
+        return;
+      }
+
+      if (isiOS) {
+        installTitle.innerText = "新增「桌面捷徑」";
+        installDesc.innerHTML = "點選底部分享按鈕 <img src='data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"14\" height=\"14\" fill=\"none\" stroke=\"%2310b981\" stroke-width=\"2.5\"><path d=\"M4 12v6h12v-6M10 2v14M6 6l4-4 4 4\"/></svg>' style='vertical-align:middle;margin:0 2px;'>，選擇「<b>加入主畫面</b>」，即可將此小工具常駐於手機桌面！";
+      } else {
+        installTitle.innerText = "新增「桌面捷徑」小工具";
+        installDesc.innerText = "點選瀏覽器右上角選單 ︙ ，選擇「新增至主畫面」或「安裝應用程式」，即刻生成桌面小工具！";
+      }
+    })();
+
+    window.dismissBanner = function() {
+      document.getElementById('shortcutBanner').style.display = 'none';
+    };
+
+    // ==========================================
+    // B. 手機底部 Tab 導航控制
+    // ==========================================
+    window.switchTab = function(tabName) {
+      // 1. 更新底部導航高亮
+      document.querySelectorAll('.tab-item').forEach(item => item.classList.remove('active'));
+      document.getElementById(`tab-${tabName}`).classList.add('active');
+
+      // 2. 切換 Badge 與對應分頁視角
+      const badge = document.getElementById('appBadge');
+      const stageControls = document.getElementById('stageControls');
+      const exploreView = document.getElementById('exploreView');
+      const compareView = document.getElementById('compareView');
+      const assessView = document.getElementById('assessView');
+
+      exploreView.style.display = 'none';
+      compareView.style.display = 'none';
+      assessView.style.display = 'none';
+
+      if (tabName === 'explore') {
+        badge.innerText = 'EXPLORE';
+        stageControls.style.display = 'flex';
+        exploreView.style.display = 'block';
+        updateThemeColor(matrixData[currentStageIndex].color, matrixData[currentStageIndex].rgb);
+      } else if (tabName === 'compare') {
+        badge.innerText = 'COMPARE';
+        stageControls.style.display = 'none';
+        compareView.style.display = 'block';
+        updateThemeColor('#6366f1', '99, 102, 241');
+      } else if (tabName === 'assess') {
+        badge.innerText = 'ASSESS';
+        stageControls.style.display = 'none';
+        assessView.style.display = 'block';
+        updateThemeColor('#06b6d4', '6, 182, 212');
+        calculateAssessment();
+      }
+    };
+
+    // ==========================================
+    // C. 階段切換與探索頁渲染
+    // ==========================================
+    window.goToStage = function(index) {
+      currentStageIndex = index;
+      
+      // 更新 Segmented Control 高亮
+      document.querySelectorAll('.stage-seg-btn').forEach((btn, i) => {
+        btn.classList.toggle('active', i === index);
+      });
+
+      const data = matrixData[index];
+      updateThemeColor(data.color, data.rgb);
+
+      // 漸出渲染新數據
+      const exView = document.getElementById('exploreView');
+      exView.style.opacity = 0;
+
+      setTimeout(() => {
+        document.getElementById('stageBadge').innerText = data.roleArchetype;
+        document.getElementById('stageBadge').style.background = data.color;
+        document.getElementById('stageTitle').innerText = data.title;
+        document.getElementById('stageYr').innerText = `${data.years} / ${data.subtitle}`;
+
+        // KPI
+        const kpisHtml = data.kpis.map((kpi, i) => `
+          <div class="kpi-pill-item">
+            <span>${kpi}</span>
+          </div>
+        `).join('');
+        document.getElementById('stageKPI').innerHTML = kpisHtml;
+
+        // Scope
+        const scopesHtml = data.scopes.map(scope => `
+          <div class="scope-box">
+            <div class="scope-icon-wrap">${scope.icon}</div>
+            <div class="scope-body">
+              <h4>${scope.title}</h4>
+              <p>${scope.desc}</p>
+            </div>
+          </div>
+        `).join('');
+        document.getElementById('stageScope').innerHTML = scopesHtml;
+
+        // Skills
+        const skillsHtml = data.skills.map(skill => `
+          <div class="tag-pill">${skill}</div>
+        `).join('');
+        document.getElementById('stageSkills').innerHTML = skillsHtml;
+
+        // Challenge
+        document.getElementById('stageChallenge').innerText = data.challenge;
+
+        exView.style.opacity = 1;
+      }, 100);
+    };
+
+    function updateThemeColor(color, rgb) {
+      document.documentElement.style.setProperty('--primary-color', color);
+      document.documentElement.style.setProperty('--primary-rgb', rgb);
+      document.getElementById('bgGlow').style.background = `radial-gradient(circle, rgba(${rgb}, 0.15) 0%, rgba(${rgb}, 0) 70%)`;
+    }
+
+    // ==========================================
+    // D. 全景對照手感 Accordion 切換
+    // ==========================================
+    window.toggleAccordion = function(element) {
+      const parent = element.parentElement;
+      const allItems = parent.querySelectorAll('.accordion-item');
+      const wasActive = element.classList.contains('active');
+
+      allItems.forEach(item => {
+        item.classList.remove('active');
+        item.querySelector('.accordion-body').style.display = 'none';
+      });
+
+      if (!wasActive) {
+        element.classList.add('active');
+        element.querySelector('.accordion-body').style.display = 'block';
+      }
+    };
+
+    // ==========================================
+    // E. 測評自評小工具核心診斷引擎 (同 PC 優化版)
+    // ==========================================
+    function initSimulator() {
+      renderCategory('checklist-group1', simulatorSkills.junior, 'j');
+      renderCategory('checklist-group2', simulatorSkills.mid, 'm');
+      renderCategory('checklist-group3', simulatorSkills.senior, 's');
+    }
+
+    function renderCategory(containerId, skillsList, prefix) {
+      const container = document.getElementById(containerId);
+      const itemsHtml = skillsList.map(skill => `
+        <div class="check-item" id="item-${skill.id}" onclick="toggleSkill('${skill.id}')">
+          <div class="checkbox-btn">
+            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          </div>
+          <div class="check-info">
+            <span class="check-label">${skill.label}</span>
+            <span class="check-desc">${skill.desc}</span>
+          </div>
+        </div>
+      `).join('');
+      container.innerHTML = itemsHtml;
+    }
+
+    window.toggleSkill = function(skillId) {
+      const itemEl = document.getElementById(`item-${skillId}`);
+      if (checkedSkills.has(skillId)) {
+        checkedSkills.delete(skillId);
+        itemEl.classList.remove('checked');
+      } else {
+        checkedSkills.add(skillId);
+        itemEl.classList.add('checked');
+      }
+      
+      updateCategoryCounts();
+      calculateAssessment();
+    };
+
+    function updateCategoryCounts() {
+      const juniorCount = simulatorSkills.junior.filter(s => checkedSkills.has(s.id)).length;
+      const midCount = simulatorSkills.mid.filter(s => checkedSkills.has(s.id)).length;
+      const seniorCount = simulatorSkills.senior.filter(s => checkedSkills.has(s.id)).length;
+      
+      document.getElementById('count-group1').innerText = `${juniorCount} / 6`;
+      document.getElementById('count-group2').innerText = `${midCount} / 6`;
+      document.getElementById('count-group3').innerText = `${seniorCount} / 6`;
+    }
+
+    function calculateAssessment() {
+      const juniorSelected = simulatorSkills.junior.filter(s => checkedSkills.has(s.id)).length;
+      const midSelected = simulatorSkills.mid.filter(s => checkedSkills.has(s.id)).length;
+      const seniorSelected = simulatorSkills.senior.filter(s => checkedSkills.has(s.id)).length;
+      
+      const juniorScore = Math.round((juniorSelected / 6) * 100);
+      const midScore = Math.round((midSelected / 6) * 100);
+      const seniorScore = Math.round((seniorSelected / 6) * 100);
+      
+      document.getElementById('score-junior').innerText = `${juniorScore}%`;
+      document.getElementById('bar-junior').style.width = `${juniorScore}%`;
+      
+      document.getElementById('score-mid').innerText = `${midScore}%`;
+      document.getElementById('bar-mid').style.width = `${midScore}%`;
+      
+      document.getElementById('score-senior').innerText = `${seniorScore}%`;
+      document.getElementById('bar-senior').style.width = `${seniorScore}%`;
+      
+      let advice = "";
+      
+      if (checkedSkills.size === 0) {
+        advice = "請在上方的技能清單中勾選您已掌握的能力，系統將立即輸出專屬的診斷報表與升級策略。";
+      } else {
+        const skillAdvice = {
+          j1: "<b>陌生客戶開發 (Cold Outreach)</b>：建議建立客製化信件範本與跟進機制，設定每日量化開發目標，並追蹤回覆率。",
+          j2: "<b>LinkedIn 精準漏斗行銷</b>：建議優化個人 LinkedIn 檔案為『解決方案導向』，並學習使用 Boolean Search 精準定位決策者。",
+          j3: "<b>CRM 漏斗與 Pipeline 管理</b>：建議學習使用 HubSpot/Salesforce 等 CRM 工具，建立標準化的客群跟進與階段轉換定義。",
+          j4: "<b>流暢的產品 Demo 簡報</b>：建議練習將產品規格轉化為『價值主張』，並多進行模擬演練，確保能精準解答客戶痛點。",
+          j5: "<b>高壓抗拒心理素質</b>：建議建立『漏斗心態』，理解拒絕是常態，藉由高頻拜訪積累手感，並多與資深前輩交流分享。",
+          j6: "<b>商務方案編製與報價</b>：建議建立標準的報價試算模板與建議書框架，學習分析客戶標案合約的核心要求。",
+          m1: "<b>渠道與經銷商評估與管理</b>：建議學習制定代理商的分級政策、授權銷售範圍，並規劃年度績效覆盤指標與防禦機制。",
+          m2: "<b>GTM 市場進入策略規劃</b>：建議學習競品定價分析矩陣，並針對單一目標區域獨立草擬具備時間軸的 GTM 市場進入藍圖。",
+          m3: "<b>複雜商務合約談判 (LOI/MOU)</b>：建議學習辨識商業核心條款（如排他性、最惠國待遇），並學習設計雙贏的妥協談判方案。",
+          m4: "<b>KOL / 技術核心人物深耕</b>：建議尋找行業內指標學術或技術專家，透過聯合發表、示範點或試用方案建立長期信任。",
+          m5: "<b>跨文化商務摩擦處理力</b>：建議主動研讀目標國家商務禮儀，並在溝通中主動確認對方真實意圖以防範誤解。",
+          m6: "<b>P&L 損益平衡基本概念</b>：建議學習解讀小型專案的利潤表，掌握通路折讓、運籌成本對利潤的影響，掌握通路毛利算計。",
+          s1: "<b>M&A 購併案與投資評估</b>：建議研讀 M&A 案例，學習如何發動並執行盡職調查 (Due Diligence) 流程與估值模型評估。",
+          s2: "<b>從 0 到 1 新事業體 (BU) 組建</b>：建議積極爭取公司內部的全新業務項目，練習從零規劃商業模式、編列預算並組建團隊。",
+          s3: "<b>跨產業多方利益生態系架構</b>：建議學習如何找出多方共贏的價值鏈，整合跨領域巨頭建立高防禦性的利益共享商業閉環。",
+          s4: "<b>董事會溝通與投融資說服力</b>：建議練習將複雜業務數字轉譯為資本故事，向高層匯報時聚焦於『增長、風險與回報』。",
+          s5: "<b>資本運作與企業估值策略</b>：建議研讀股權結構、融資條款 (Term Sheet) 以及如何透過策略合作帶動企業估值溢價。",
+          s6: "<b>全責 P&L 與跨國組織管理</b>：建議爭取管理特定區域分公司損益 (P&L)，修煉多元文化團隊的領導、授權與協作機制。"
+        };
+
+        let archetype = "";
+        let archetypeTitle = "";
+        let focusColor = "";
+        let archetypeDesc = "";
+        let renderJuniorMissing = false;
+        let renderMidMissing = false;
+        let renderSeniorMissing = false;
+        let juniorLabel = "";
+        let midLabel = "";
+        let seniorLabel = "";
+
+        if (juniorScore >= 80 && midScore >= 70 && seniorScore >= 50) {
+          archetype = "master";
+          archetypeTitle = "商業架構大師 (Architect)";
+          focusColor = "#06b6d4";
+          archetypeDesc = `卓越！您在 BD 的執行、策略、資本三大維度均展現出極高的成熟度（初階 ${juniorScore}%、中階 ${midScore}%、高階匹配達 ${seniorScore}%）。您不僅能下地打仗，更能上天架構。您已完全具備主導大型策略合作、跨國組織管理與資本擴張的能力，是極為罕見的商業架構大師。`;
+          renderJuniorMissing = juniorScore < 100;
+          renderMidMissing = midScore < 100;
+          renderSeniorMissing = seniorScore < 100;
+          juniorLabel = "初階完美拼圖補強";
+          midLabel = "中階完善開拓體系";
+          seniorLabel = "高階極致格局微調";
+        } else if (seniorScore >= 50 && (juniorScore < 70 || midScore < 50)) {
+          archetype = "high_altitude";
+          archetypeTitle = "高空架構師 (High-Altitude Architect)";
+          focusColor = "#8b5cf6";
+          archetypeDesc = `您具備極佳的頂層思維與資本格局（高階匹配度 ${seniorScore}%，中階 ${midScore}%，初階 ${juniorScore}%），但在中低階的實戰談判、通路管理或第一線陌生開發上缺乏扎實手感。這種『高空架構』容易導致策略落地困難。強烈建議深入一線，累積實際拿下市場與談判斡旋的實戰經驗，以實現『知行合一』。`;
+          renderJuniorMissing = juniorScore < 100;
+          renderMidMissing = midScore < 100;
+          juniorLabel = "落地執行修煉：第一線地基";
+          midLabel = "戰術協調補強：商務實戰手感";
+        } else if (juniorScore >= 80 && midScore >= 60 && seniorScore < 50) {
+          archetype = "strategist";
+          archetypeTitle = "策略實踐家 (Versatile Strategist)";
+          focusColor = "#f59e0b";
+          let seniorText = seniorScore > 0 ? `，且在高階頂層架構上已初探端倪（高階匹配度 ${seniorScore}%）` : '';
+          archetypeDesc = `恭喜！您已是一位極為成熟的中階 BD 策略家（中階匹配度 ${midScore}%）${seniorText}。不論是單兵開發還是區域經銷網絡管理，您都駕輕就熟。此時您的最大瓶頸在於『商業格局的維度跨越』——需要將目光從『做大營收』轉向『放大公司估值』，學習資本運作與頂層商業模式設計。`;
+          renderMidMissing = midScore < 100;
+          renderSeniorMissing = true;
+          midLabel = "當前中階修煉：攻克最後防線";
+          seniorLabel = "跨維升級挑戰：頂層架構修煉";
+        } else if (midScore >= 50 && juniorScore < 60) {
+          archetype = "tactical_manager";
+          archetypeTitle = "偏科型實戰經理 (Tactical Manager)";
+          focusColor = "#ec4899";
+          let seniorText = seniorScore > 0 ? `，且已開始展現高階的格局潛力（高階匹配度 ${seniorScore}%）` : '';
+          archetypeDesc = `您擁有出色的市場開拓與管道協調能力（中階匹配度 ${midScore}%）${seniorText}，但底層執行技能（初階匹配度 ${juniorScore}%）存在明顯缺失。這種『跳躍式成長』可能會在您需要帶領新人或建立標準流程時造成障礙。強烈建議回頭補齊核心執行地基，讓您的能力體系更加無懈可擊。`;
+          renderJuniorMissing = true;
+          renderMidMissing = midScore < 100;
+          juniorLabel = "急需回補地基：底層執行漏洞";
+          midLabel = "中階攻堅拼圖：完善開拓體系";
+        } else if (juniorScore >= 50 && midScore < 50 && seniorScore < 30) {
+          archetype = "tactical_hunter";
+          archetypeTitle = "實戰型獵人 (Tactical Hunter)";
+          focusColor = "#10b981";
+          let seniorText = seniorScore > 0 ? `，並已展現出高階頂層思考的微弱火苗（高階匹配度 ${seniorScore}%）` : '';
+          archetypeDesc = `您具備良好的第一線執行力與開發地基（初階匹配度 ${juniorScore}%）${seniorText}，是團隊中不可或缺的開拓獵人。當前的關鍵任務是從『單兵作戰』邁向『系統化開拓』，修煉經銷管理與策略思維，以實現向中階 BD 的躍升。`;
+          renderJuniorMissing = juniorScore < 100;
+          renderMidMissing = true;
+          juniorLabel = "當前首要突破：基礎地基補強";
+          midLabel = "下一階段儲備：中階拓荒戰術";
+        } else {
+          archetype = "rising_star";
+          archetypeTitle = "成長型商務人才 (Rising BD Professional)";
+          focusColor = "#3b82f6";
+          let seniorText = seniorScore > 0 ? `，且已開始涉足高階頂層思維（高階匹配度 ${seniorScore}%）` : '';
+          archetypeDesc = `您正走在扎實的成長道路上（初階 ${juniorScore}%，中階 ${midScore}%${seniorText}）。在基礎執行與市場開拓上皆有斬獲。目前的關鍵是找出最核心的短板進行定向突破，逐步向高階的策略與架構層面推進。`;
+          renderJuniorMissing = juniorScore < 100;
+          renderMidMissing = midScore < 100;
+          juniorLabel = "地基鞏固：基礎執行優化";
+          midLabel = "升級儲備：中階開拓規劃";
+        }
+
+        const getMissingSkillsList = (list, color, title) => {
+          const missing = list.filter(s => !checkedSkills.has(s.id));
+          if (missing.length === 0) return '';
+          return `
+            <div style="margin-bottom: 12px; margin-top: 8px;">
+              <div style="font-size: 0.78rem; font-weight: 700; color: ${color}; margin-bottom: 4px; display: flex; align-items: center; gap: 4px;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                ${title}
+              </div>
+              <ul style="list-style-type: none; padding-left: 0; display: flex; flex-direction: column; gap: 6px;">
+                ${missing.map(s => `
+                  <li style="font-size: 0.75rem; background: rgba(255, 255, 255, 0.01); border-left: 3px solid ${color}; padding: 6px 10px; border-radius: 0 4px 4px 0; line-height: 1.4; color: var(--text-secondary); border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); border-right: 1px solid var(--color-border);">
+                    <span style="font-weight: 700; color: var(--text-primary);">${s.label}</span><br>
+                    <span style="font-size: 0.7rem; color: var(--text-muted); display: block; margin-top: 2px;">${skillAdvice[s.id]}</span>
+                  </li>
+                `).join('')}
+              </ul>
+            </div>
+          `;
+        };
+
+        let bottlenecksHtml = '';
+        if (archetype === "master" && juniorScore === 100 && midScore === 100 && seniorScore === 100) {
+          bottlenecksHtml = `
+            <div style="font-size: 0.75rem; color: #06b6d4; font-weight: 500; background: rgba(6, 182, 212, 0.04); padding: 10px; border-radius: 6px; line-height: 1.5; border: 1px solid rgba(6, 182, 212, 0.2); margin-top: 10px;">
+              <b>🏆 職涯大滿貫！</b><br>您已解鎖 BD 全能力，是極罕見的商業架構大師。建議直接錨定 CBO、CEO 或 Venture Partner 等頂端機會！
+            </div>
+          `;
+        } else {
+          let juniorMissingHtml = renderJuniorMissing ? getMissingSkillsList(simulatorSkills.junior, '#10b981', juniorLabel) : '';
+          let midMissingHtml = renderMidMissing ? getMissingSkillsList(simulatorSkills.mid, '#f59e0b', midLabel) : '';
+          let seniorMissingHtml = renderSeniorMissing ? getMissingSkillsList(simulatorSkills.senior, '#6366f1', seniorLabel) : '';
+          
+          bottlenecksHtml = `
+            <div style="font-size: 0.78rem; font-weight: 700; color: #ef4444; margin-top: 12px; margin-bottom: 4px; display: flex; align-items: center; gap: 4px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+              能力瓶頸診斷與提升建議
+            </div>
+            ${juniorMissingHtml}
+            ${midMissingHtml}
+            ${seniorMissingHtml}
+          `;
+        }
+
+        advice = `
+          <div style="margin-bottom: 8px;">
+            <span style="background: ${focusColor}; color: white; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 0.68rem; text-transform: uppercase;">
+              【職涯診斷：${archetypeTitle}】
+            </span>
+          </div>
+          <p style="font-size: 0.78rem; line-height: 1.5; margin-bottom: 12px; color: var(--text-primary);">
+            ${archetypeDesc}
+          </p>
+
+          <!-- 具體優勢 -->
+          <div style="margin-bottom: 12px;">
+            <div style="font-size: 0.78rem; font-weight: 700; color: #10b981; margin-bottom: 6px; display: flex; align-items: center; gap: 4px;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="flex-shrink:0;"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              已具備優勢 (${checkedSkills.size} 項)
+            </div>
+            <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+              ${Array.from(checkedSkills).map(id => {
+                const skill = [...simulatorSkills.junior, ...simulatorSkills.mid, ...simulatorSkills.senior].find(s => s.id === id);
+                return `<span style="font-size: 0.68rem; background: rgba(16, 185, 129, 0.08); border: 0.5px solid rgba(16, 185, 129, 0.2); color: #10b981; padding: 2px 8px; border-radius: 20px; font-weight: 500;">${skill ? skill.label : id}</span>`;
+              }).join('')}
+            </div>
+          </div>
+
+          <!-- 提升方案 -->
+          <div class="bottlenecks-section">
+            ${bottlenecksHtml}
+          </div>
+        `;
+      }
+      
+      document.getElementById('adviceText').innerHTML = advice;
+    }
+
+    // ==========================================
+    // F. 初始化啟動與 PWA Service Worker 註冊
+    // ==========================================
+    (function() {
+      // 1. 預設渲染首個階段
+      goToStage(0);
+      
+      // 2. 初始化自評清單
+      initSimulator();
+      
+      // 3. 註冊 PWA Service Worker
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('sw.js')
+            .then(reg => console.log('Service Worker 註冊成功！', reg.scope))
+            .catch(err => console.log('Service Worker 註冊失敗！', err));
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

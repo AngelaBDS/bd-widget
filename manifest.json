@@ -2,7 +2,7 @@
   "name": "BD 職涯發展矩陣與自評小工具",
   "short_name": "BD 職涯小工具",
   "description": "專為 BD 菁英打造的職涯發展三階段矩陣與動態瓶頸自評工具。",
-  "start_url": "bd_career_matrix_mobile.html",
+  "start_url": "index.html",
   "display": "standalone",
   "background_color": "#090d16",
   "theme_color": "#090d16",
