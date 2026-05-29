@@ -6,12 +6,17 @@
   <title>BD 職涯升級助手 | Mobile Widget</title>
   
   <!-- PWA 元資料與捷徑設定 -->
+  <script>
+    if (window.innerWidth > 768) {
+      window.location.href = "bd_career_matrix.html";
+    }
+  </script>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#090d16">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="BD 職涯小工具">
-  <link rel="apple-touch-icon" href="bd_app_icon.png">
+  <link rel="apple-touch-icon" href="bd_app_icon_1.jpeg">
 
   <!-- Google Fonts: Outfit (標題與數字) and Inter (內文) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -740,7 +745,7 @@
     <!-- 頂部 Header -->
     <header>
       <div class="brand">
-        <img src="bd_app_icon.png" alt="BD Career Matrix Logo">
+        <img src="bd_app_icon_1.jpeg" alt="BD Career Matrix Logo">
         <div class="brand-text">
           <h1>BD 職涯小工具</h1>
           <p>BD Career Matrix</p>
